@@ -11,7 +11,7 @@ Create bounties. Submit solutions. Let AI validators evaluate and pick winners t
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
 [![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](LICENSE)
 
-[Live Demo](https://bounty-resolver.vercel.app) - [Report Bug](https://github.com/nanometa/Bounty-Resolver/issues) - [Request Feature](https://github.com/nanometa/Bounty-Resolver/issues)
+[Live Demo](https://bountyresolver.vercel.app) - [Report Bug](https://github.com/nanometa/Bounty-Resolver/issues) - [Request Feature](https://github.com/nanometa/Bounty-Resolver/issues)
 
 </div>
 
