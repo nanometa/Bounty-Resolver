@@ -6,10 +6,10 @@ import ScoreCircle, { getScoreColor } from '../components/ScoreCircle';
 import TxStatus from '../components/TxStatus';
 
 const EVAL_STEPS = [
-  'Sending to GenLayer validators...',
-  'AI analysts scoring your work...',
-  'Reaching consensus...',
-  'Storing verdict on-chain...',
+  'SENDING_TO_GENLAYER_VALIDATORS',
+  'AI_ANALYSTS_SCORING_WORK',
+  'REACHING_CONSENSUS',
+  'STORING_VERDICT_ON_CHAIN',
 ];
 
 function SubmissionDetail() {
@@ -63,7 +63,6 @@ function SubmissionDetail() {
     setEvalTx({ status: 'pending', hash: null, error: null });
     setEvalStep(0);
 
-    // Animate through steps
     const stepInterval = setInterval(() => {
       setEvalStep(prev => {
         if (prev < EVAL_STEPS.length - 1) return prev + 1;
@@ -82,7 +81,6 @@ function SubmissionDetail() {
 
       clearInterval(stepInterval);
       setEvalTx({ status: 'FINALIZED', hash, error: null });
-      // Reload data
       setTimeout(loadData, 2000);
     } catch (err) {
       clearInterval(stepInterval);
@@ -98,16 +96,22 @@ function SubmissionDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-none animate-spin" />
       </div>
     );
   }
 
   if (!submission || !submission.sub_id) {
     return (
-      <div className="text-center py-20">
-        <p className="text-slate-400">Submission not found.</p>
-        <Link to="/" className="text-violet-400 hover:underline mt-4 inline-block">← Back to Bounties</Link>
+      <div className="max-w-3xl mx-auto">
+        <Link to="/app" className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors">
+          {'< BACK_TO_BOUNTIES'}
+        </Link>
+        <div className="text-center py-16 border border-white/20 bg-[#0a0a0a]">
+          <p className="font-mono text-gray-500 text-sm tracking-wider">
+            {'> SUBMISSION_NOT_FOUND'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -115,58 +119,74 @@ function SubmissionDetail() {
   const isEvaluated = score > 0;
   const isBountyOwner = address && bounty && bounty.creator && address.toLowerCase() === bounty.creator.toLowerCase();
 
+  const truncate = (addr) =>
+    addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+
   return (
     <div className="max-w-3xl mx-auto">
       <Link
-        to={submission.bounty_id ? `/bounty/${submission.bounty_id}` : '/'}
-        className="text-slate-400 hover:text-white text-sm mb-6 inline-block"
+        to={submission.bounty_id ? `/bounty/${submission.bounty_id}` : '/app'}
+        className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors"
       >
-        ← Back to Bounty
+        {'< BACK_TO_BOUNTY'}
       </Link>
 
-      {/* Submission Info */}
-      <div className="border border-[#1a1a2e] rounded-xl p-6 bg-[#0c0c14]/60 backdrop-blur-sm mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="font-heading font-bold text-xl text-white">
-            Submission: <span className="font-mono text-violet-400">{submission.sub_id}</span>
-          </h1>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="font-mono text-xs text-white tracking-widest">// SUBMISSION_RECORD</div>
           {isEvaluated ? (
-            <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Evaluated
+            <span className="font-mono text-[10px] px-2 py-0.5 tracking-widest uppercase border bg-white/10 text-white border-white/40">
+              EVALUATED
             </span>
           ) : (
-            <span className="text-xs px-2 py-1 rounded-full bg-yellow/10 text-amber-400 border border-yellow/20">
-              Pending
+            <span className="font-mono text-[10px] px-2 py-0.5 tracking-widest uppercase border bg-black text-gray-500 border-gray-700">
+              PENDING
             </span>
           )}
         </div>
+        <h1 className="font-mono font-bold text-2xl md:text-3xl text-white tracking-tight break-all">
+          <span className="text-gray-500">{'>'} </span>
+          {submission.sub_id}
+        </h1>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Submission Info */}
+      <div className="border border-white/30 bg-[#0a0a0a] p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <span className="text-slate-500 text-xs uppercase">Submitter</span>
-            <p className="font-mono text-sm text-white mt-1">{submission.worker}</p>
+            <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-1">
+              {'> SUBMITTER'}
+            </div>
+            <p className="font-mono text-sm text-white break-all">{truncate(submission.worker)}</p>
           </div>
           <div>
-            <span className="text-slate-400 text-xs uppercase">Bounty</span>
-            <Link to={`/bounty/${submission.bounty_id}`} className="block text-violet-400 hover:underline text-sm mt-1">
+            <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-1">
+              {'> BOUNTY_ID'}
+            </div>
+            <Link to={`/bounty/${submission.bounty_id}`} className="font-mono text-sm text-white hover:underline break-all">
               {submission.bounty_id}
             </Link>
           </div>
-          <div className="col-span-2">
-            <span className="text-slate-400 text-xs uppercase">Solution URL</span>
+          <div className="md:col-span-2">
+            <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-1">
+              {'> SOLUTION_URL'}
+            </div>
             <a
               href={submission.solution_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block text-sky-400 hover:underline text-sm mt-1 break-all"
+              className="font-mono text-sm text-white hover:underline break-all"
             >
               {submission.solution_url}
             </a>
           </div>
           {submission.description && (
-            <div className="col-span-2">
-              <span className="text-slate-400 text-xs uppercase">Description</span>
-              <p className="text-white mt-1">{submission.description}</p>
+            <div className="md:col-span-2">
+              <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-1">
+                {'> DESCRIPTION'}
+              </div>
+              <p className="text-gray-300 text-sm leading-relaxed">{submission.description}</p>
             </div>
           )}
         </div>
@@ -174,8 +194,10 @@ function SubmissionDetail() {
 
       {/* Evaluation Section */}
       {isEvaluated ? (
-        <div className="border border-[#1a1a2e] rounded-xl p-6 bg-[#0c0c14]/60 backdrop-blur-sm">
-          <h2 className="font-heading font-bold text-lg mb-6 text-center">AI Evaluation</h2>
+        <div className="border border-white/30 bg-[#0a0a0a] p-6">
+          <div className="font-mono text-xs text-white tracking-widest mb-4 text-center">
+            // AI_EVALUATION_RESULT
+          </div>
 
           {/* Score Circle */}
           <div className="flex justify-center mb-6">
@@ -184,24 +206,30 @@ function SubmissionDetail() {
 
           {/* Verified Badge */}
           <div className="text-center mb-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/20">
-              ✓ Verified by GenLayer consensus
+            <span className="inline-flex items-center gap-2 font-mono text-[10px] px-3 py-1.5 bg-white/10 text-white border border-white/40 tracking-widest uppercase">
+              + VERIFIED_BY_GENLAYER_CONSENSUS
             </span>
           </div>
 
           {evaluation && evaluation.feedback && (
-            <div className="mb-6 p-4 rounded-lg bg-[#050508] border-l-4 border-violet-500">
-              <p className="text-white italic">&ldquo;{evaluation.feedback}&rdquo;</p>
+            <div className="mb-6 p-4 bg-black border-l-2 border-white">
+              <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+                {'> AI_FEEDBACK'}
+              </div>
+              <p className="text-gray-300 text-sm italic leading-relaxed">&ldquo;{evaluation.feedback}&rdquo;</p>
             </div>
           )}
 
           {evaluation && evaluation.strengths && evaluation.strengths.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm text-slate-400 uppercase mb-2">Strengths</h3>
-              <ul className="space-y-1">
+            <div className="mb-6">
+              <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+                {'> STRENGTHS'}
+              </div>
+              <ul className="space-y-1.5">
                 {evaluation.strengths.map((s, i) => (
-                  <li key={i} className="flex items-center gap-2 text-emerald-400 text-sm">
-                    <span>✓</span> {s}
+                  <li key={i} className="flex items-start gap-2 font-mono text-sm text-white">
+                    <span className="text-white">[+]</span>
+                    <span>{s}</span>
                   </li>
                 ))}
               </ul>
@@ -210,11 +238,14 @@ function SubmissionDetail() {
 
           {evaluation && evaluation.gaps && evaluation.gaps.length > 0 && (
             <div>
-              <h3 className="text-sm text-slate-400 uppercase mb-2">Gaps</h3>
-              <ul className="space-y-1">
+              <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+                {'> GAPS'}
+              </div>
+              <ul className="space-y-1.5">
                 {evaluation.gaps.map((g, i) => (
-                  <li key={i} className="flex items-center gap-2 text-amber-400 text-sm">
-                    <span>→</span> {g}
+                  <li key={i} className="flex items-start gap-2 font-mono text-sm text-gray-400">
+                    <span className="text-gray-500">[-]</span>
+                    <span>{g}</span>
                   </li>
                 ))}
               </ul>
@@ -222,33 +253,35 @@ function SubmissionDetail() {
           )}
         </div>
       ) : (
-        <div className="border border-[#1a1a2e] rounded-xl p-6 bg-[#0c0c14]/60 backdrop-blur-sm text-center">
+        <div className="border border-white/30 bg-[#0a0a0a] p-6 text-center">
           {evalTx.status === 'pending' ? (
             <div className="py-8">
-              <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-              <div className="space-y-3">
+              <div className="w-12 h-12 border-2 border-white border-t-transparent rounded-none animate-spin mx-auto mb-6" />
+              <div className="space-y-2 text-left max-w-md mx-auto">
                 {EVAL_STEPS.map((step, i) => (
                   <p
                     key={i}
-                    className={`text-sm transition-all duration-500 ${
-                      i <= evalStep ? 'text-white opacity-100' : 'text-slate-400 opacity-30'
+                    className={`font-mono text-xs tracking-widest transition-all duration-500 ${
+                      i <= evalStep ? 'text-white opacity-100' : 'text-gray-700 opacity-50'
                     }`}
                   >
-                    {i < evalStep ? '✓' : i === evalStep ? '◉' : '○'} {step}
+                    {i < evalStep ? '[+]' : i === evalStep ? '[@]' : '[o]'} {step}
                   </p>
                 ))}
               </div>
             </div>
           ) : (
             <>
-              <p className="text-slate-400 mb-4">This submission has not been evaluated yet.</p>
+              <p className="font-mono text-gray-500 text-sm tracking-wider mb-6">
+                {'> NOT_YET_EVALUATED // AWAITING_AI_VALIDATORS'}
+              </p>
               {isBountyOwner && (
                 <button
                   onClick={handleEvaluate}
                   disabled={evalTx.status === 'pending'}
-                  className="px-8 py-3 bg-violet-500 hover:bg-violet-500/90 text-white rounded-lg font-medium transition-colors"
+                  className="font-mono px-8 py-3 bg-white hover:bg-gray-200 text-black font-bold uppercase tracking-widest text-sm transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]"
                 >
-                  Request AI Evaluation
+                  {'[ REQUEST_AI_EVALUATION ]'}
                 </button>
               )}
             </>
@@ -267,5 +300,3 @@ function SubmissionDetail() {
 }
 
 export default SubmissionDetail;
-
-

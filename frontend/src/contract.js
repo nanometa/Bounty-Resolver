@@ -1,16 +1,14 @@
-// ═══════════════════════════════════════
-// CONTRACT CLIENT — genlayer-js v1.1.8
-// Uses raw gen_call for reads (SDK bug: returns null for "00")
-// ═══════════════════════════════════════
+// =======================================
+// CONTRACT CLIENT - genlayer-js v1.1.8
+// All write functions: must produce Type "Call", never empty data.
+// All read functions: wrap in try/catch and return safe defaults.
+// =======================================
 
-import { createClient } from "genlayer-js";
-import { studionet } from "genlayer-js/chains";
+import { createClient } from 'genlayer-js';
+import { studionet } from 'genlayer-js/chains';
 
-const CONTRACT_ADDRESS = "0x9bcE7b8f2068dB71Da18B231F12104B057feb7dF";
-const RPC_URL = "https://studio.genlayer.com/api";
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const CONTRACT_ADDRESS = '0x9bcE7b8f2068dB71Da18B231F12104B057feb7dF';
 
-// Create the genlayer client (for writes only)
 let client = null;
 
 export function getClient(account) {
@@ -23,87 +21,29 @@ export function getClient(account) {
 
 export function getReadClient() {
   if (!client) {
-    client = createClient({
-      chain: studionet,
-    });
+    client = createClient({ chain: studionet });
   }
   return client;
 }
 
-// ═══════════════════════════════════════
-// RAW READ — bypasses SDK null bug
-// Uses client.readContract but returns raw via internal request
-// ═══════════════════════════════════════
-
-async function rawRead(functionName, args) {
-  try {
-    const cl = getReadClient();
-    // Use the SDK to encode and send, but we intercept
-    const result = await cl.readContract({
-      address: CONTRACT_ADDRESS,
-      functionName,
-      args,
-    });
-    // SDK returns null for "00" (zero/empty) — treat as valid
-    return result;
-  } catch {
-    return null;
-  }
-}
-
-// Direct RPC fallback for reading
-async function rpcRead(functionName, args) {
-  try {
-    // Encode using the SDK's internal method
-    const cl = getReadClient();
-    // Make raw request through the client's transport
-    const result = await cl.request({
-      method: 'gen_call',
-      params: [{
-        type: 'read',
-        to: CONTRACT_ADDRESS,
-        from: ZERO_ADDRESS,
-        data: encodeCallData(functionName, args),
-        transaction_hash_variant: 'latest-nonfinal',
-      }],
-    });
-    return result;
-  } catch {
-    return null;
-  }
-}
-
-// Simple msgpack-like encoding for GenLayer calls
-function encodeCallData(functionName, args) {
-  // Build the calldata bytes manually matching GenLayer's format
-  // Format: msgpack array [method_key, functionName, ...args]
-  const enc = new TextEncoder();
-  const methodBytes = enc.encode(functionName);
-
-  // We'll use the SDK's readContract and handle null as 0
-  // This is simpler than reimplementing the encoder
-  return null; // unused - we use SDK approach below
-}
-
-// ═══════════════════════════════════════
-// TX POLLING HELPER
-// Poll getTransaction() every 3s until FINALIZED or timeout
-// ═══════════════════════════════════════
+// =======================================
+// TX POLLING - Wait for finalization
+// =======================================
 
 export async function waitForTransaction(client, txHash, onStatus) {
   const POLL_INTERVAL = 3000;
-  const TIMEOUT = 300000; // 5 minutes for Studionet
+  const TIMEOUT = 300000; // 5 min for Studionet
   const start = Date.now();
 
-  // GenLayer status codes: 4=PROPOSING, 5=COMMITTING, 6=REVEALING, 7=ACCEPTED/FINALIZED
-  const FINALIZED_STATUSES = ["FINALIZED", "ACCEPTED", 7, "7"];
-  const ERROR_STATUSES = ["ERROR", "CANCELED", "UNDETERMINED", 0, 8, 9, 10];
+  // GenLayer status: 4=PROPOSING, 5=COMMITTING, 6=REVEALING, 7=ACCEPTED/FINALIZED
+  const FINALIZED = ['FINALIZED', 'ACCEPTED', 7, '7'];
+  const ERRORS = ['ERROR', 'CANCELED', 'UNDETERMINED', 0, 8, 9, 10];
 
   return new Promise((resolve, reject) => {
     const poll = async () => {
       try {
         if (Date.now() - start > TIMEOUT) {
-          reject(new Error("Consensus taking longer than expected — try again"));
+          reject(new Error('Consensus taking longer than expected - try again'));
           return;
         }
 
@@ -116,21 +56,21 @@ export async function waitForTransaction(client, txHash, onStatus) {
 
         const status = tx.status ?? tx.transaction_status ?? tx.status_code;
 
-        if (FINALIZED_STATUSES.includes(status)) {
-          if (onStatus) onStatus("FINALIZED");
+        if (FINALIZED.includes(status)) {
+          if (onStatus) onStatus('FINALIZED');
           resolve(tx);
           return;
         }
 
-        if (ERROR_STATUSES.includes(status)) {
-          reject(new Error(tx.error || tx.message || "Transaction failed"));
+        if (ERRORS.includes(status)) {
+          reject(new Error(tx.error || tx.message || 'Transaction failed'));
           return;
         }
 
         if (onStatus) onStatus(String(status));
         setTimeout(poll, POLL_INTERVAL);
-      } catch (err) {
-        // Keep polling on network errors
+      } catch {
+        // Network errors: keep polling
         setTimeout(poll, POLL_INTERVAL);
       }
     };
@@ -139,71 +79,126 @@ export async function waitForTransaction(client, txHash, onStatus) {
   });
 }
 
-// ═══════════════════════════════════════
+// =======================================
+// INPUT VALIDATION HELPERS
+// Defense in depth - sanitize before sending to chain
+// =======================================
+
+function requireAddress(addr, label = 'address') {
+  if (!addr || typeof addr !== 'string' || !addr.startsWith('0x') || addr.length !== 42) {
+    throw new Error(`Invalid ${label}`);
+  }
+  return addr;
+}
+
+function requireString(str, label, max = 1000) {
+  if (typeof str !== 'string') throw new Error(`Invalid ${label}`);
+  const trimmed = str.trim();
+  if (!trimmed) throw new Error(`${label} is required`);
+  if (trimmed.length > max) throw new Error(`${label} must be at most ${max} chars`);
+  return trimmed;
+}
+
+function requireUrl(url, label = 'url') {
+  const cleaned = requireString(url, label, 500);
+  try {
+    const parsed = new URL(cleaned);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error(`${label} must use http or https`);
+    }
+    return parsed.toString();
+  } catch {
+    throw new Error(`Invalid ${label}`);
+  }
+}
+
+function requirePoints(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num) || num <= 0 || num > 1_000_000) {
+    throw new Error('Reward points must be a positive number <= 1,000,000');
+  }
+  return Math.floor(num);
+}
+
+// =======================================
 // WRITE FUNCTIONS
-// writeContract() must produce Type: "Call" NOT "Send"
-// Transaction Data must NEVER be empty {}
-// ═══════════════════════════════════════
+// =======================================
 
 export async function createBounty(account, title, description, requirements, rewardPoints) {
+  requireAddress(account, 'wallet address');
+  const t = requireString(title, 'title', 200);
+  const d = requireString(description, 'description', 5000);
+  const r = requireString(requirements, 'requirements', 5000);
+  const points = requirePoints(rewardPoints);
+
   const cl = getClient(account);
-  const hash = await cl.writeContract({
+  return cl.writeContract({
     address: CONTRACT_ADDRESS,
-    functionName: "create_bounty",
-    args: [title, description, requirements, Number(rewardPoints) || 100],
+    functionName: 'create_bounty',
+    args: [t, d, r, points],
   });
-  return hash;
 }
 
 export async function submitSolution(account, bountyId, solutionUrl, description) {
+  requireAddress(account, 'wallet address');
+  requireString(bountyId, 'bounty id', 100);
+  const url = requireUrl(solutionUrl, 'solution URL');
+  const desc = description ? requireString(description, 'description', 2000) : '';
+
   const cl = getClient(account);
-  const hash = await cl.writeContract({
+  return cl.writeContract({
     address: CONTRACT_ADDRESS,
-    functionName: "submit_solution",
-    args: [bountyId, solutionUrl, description],
+    functionName: 'submit_solution',
+    args: [bountyId, url, desc],
   });
-  return hash;
 }
 
 export async function evaluateSubmission(account, subId) {
+  requireAddress(account, 'wallet address');
+  requireString(subId, 'submission id', 100);
+
   const cl = getClient(account);
-  const hash = await cl.writeContract({
+  return cl.writeContract({
     address: CONTRACT_ADDRESS,
-    functionName: "evaluate_submission",
+    functionName: 'evaluate_submission',
     args: [subId],
   });
-  return hash;
 }
 
 export async function closeBounty(account, bountyId) {
+  requireAddress(account, 'wallet address');
+  requireString(bountyId, 'bounty id', 100);
+
   const cl = getClient(account);
-  const hash = await cl.writeContract({
+  return cl.writeContract({
     address: CONTRACT_ADDRESS,
-    functionName: "close_bounty",
+    functionName: 'close_bounty',
     args: [bountyId],
   });
-  return hash;
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // READ FUNCTIONS
-// ALL view functions return defaults on error, NEVER throw
-// Wrap every readContract() in try/catch → return default
-// ═══════════════════════════════════════
+// All return safe defaults on error
+// =======================================
+
+function unwrap(result) {
+  if (result === null || result === undefined) return null;
+  if (typeof result === 'object' && 'result' in result) return result.result;
+  return result;
+}
 
 export async function getBounty(bountyId) {
   try {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_bounty",
+      functionName: 'get_bounty',
       args: [bountyId],
     });
-    if (result === null || result === undefined) return "{}";
-    if (typeof result === 'object' && result.result !== undefined) return String(result.result) || "{}";
-    return String(result) || "{}";
+    return String(unwrap(result) ?? '') || '{}';
   } catch {
-    return "{}";
+    return '{}';
   }
 }
 
@@ -212,12 +207,12 @@ export async function getSubmission(subId) {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_submission",
+      functionName: 'get_submission',
       args: [subId],
     });
-    return result || "{}";
+    return result || '{}';
   } catch {
-    return "{}";
+    return '{}';
   }
 }
 
@@ -226,12 +221,12 @@ export async function getBountySubmissions(bountyId) {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_bounty_submissions",
+      functionName: 'get_bounty_submissions',
       args: [bountyId],
     });
-    return result || "[]";
+    return result || '[]';
   } catch {
-    return "[]";
+    return '[]';
   }
 }
 
@@ -240,7 +235,7 @@ export async function getScore(subId) {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_score",
+      functionName: 'get_score',
       args: [subId],
     });
     return Number(result) || 0;
@@ -254,7 +249,7 @@ export async function getWinnerPoints(address) {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_winner_points",
+      functionName: 'get_winner_points',
       args: [address],
     });
     return Number(result) || 0;
@@ -268,12 +263,10 @@ export async function getBountyCount() {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_bounty_count",
+      functionName: 'get_bounty_count',
       args: [],
     });
-    if (result === null || result === undefined) return 0;
-    if (typeof result === 'object' && result.result !== undefined) return Number(result.result) || 0;
-    return Number(result) || 0;
+    return Number(unwrap(result)) || 0;
   } catch {
     return 0;
   }
@@ -284,7 +277,7 @@ export async function getSubmissionCount() {
     const cl = getReadClient();
     const result = await cl.readContract({
       address: CONTRACT_ADDRESS,
-      functionName: "get_submission_count",
+      functionName: 'get_submission_count',
       args: [],
     });
     return Number(result) || 0;
@@ -293,19 +286,23 @@ export async function getSubmissionCount() {
   }
 }
 
-// Helper to get all bounties
-// Contract uses "bounty-0", "bounty-1", ... (starts at 0, uses dash)
+// Returns all bounties (parallel reads for performance)
 export async function getAllBounties() {
   try {
     const count = await getBountyCount();
-    const bounties = [];
+    if (count <= 0) return [];
+
+    const reads = [];
     for (let i = 0; i < count; i++) {
-      const data = await getBounty(`bounty-${i}`);
+      reads.push(getBounty(`bounty-${i}`));
+    }
+    const results = await Promise.all(reads);
+
+    const bounties = [];
+    for (const data of results) {
       try {
         const parsed = JSON.parse(data);
-        if (parsed && parsed.bounty_id) {
-          bounties.push(parsed);
-        }
+        if (parsed && parsed.bounty_id) bounties.push(parsed);
       } catch {
         // skip invalid
       }

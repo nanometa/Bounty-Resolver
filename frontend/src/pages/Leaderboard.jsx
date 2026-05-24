@@ -15,7 +15,6 @@ function Leaderboard() {
   async function loadLeaderboard() {
     setLoading(true);
     try {
-      // Get all bounties to extract unique addresses
       const bounties = await getAllBounties();
       const addresses = new Set();
 
@@ -23,7 +22,6 @@ function Leaderboard() {
         if (b.creator) addresses.add(b.creator);
       }
 
-      // Get points for all known addresses
       const entries = [];
       for (const addr of addresses) {
         const points = await getWinnerPoints(addr);
@@ -32,7 +30,6 @@ function Leaderboard() {
         }
       }
 
-      // Sort by points descending
       entries.sort((a, b) => b.points - a.points);
       setLeaderboard(entries);
     } catch {
@@ -54,38 +51,46 @@ function Leaderboard() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Link to="/" className="text-slate-400 hover:text-white text-sm mb-6 inline-block">
-        ← Back to Bounties
+      <Link to="/app" className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors">
+        {'< BACK_TO_BOUNTIES'}
       </Link>
 
-      <h1 className="font-heading font-bold text-2xl mb-6">Leaderboard</h1>
+      <div className="mb-8">
+        <div className="font-mono text-xs text-white tracking-widest mb-2">// REPUTATION_LEDGER</div>
+        <h1 className="font-mono font-bold text-3xl text-white tracking-tight">
+          Leaderboard<span className="text-white">()</span>
+        </h1>
+      </div>
 
       {/* Search */}
       <form onSubmit={handleSearch} className="mb-8">
+        <label className="block font-mono text-xs text-gray-400 mb-2 tracking-widest uppercase">
+          Query_Address
+        </label>
         <div className="flex gap-3">
           <input
             type="text"
             value={searchAddress}
             onChange={(e) => setSearchAddress(e.target.value)}
-            placeholder="Search by address (0x...)"
-            className="flex-1 bg-[#0a0a12] border border-[#1a1a2e] rounded-xl px-4 py-3 text-white font-mono text-sm placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all"
+            placeholder="0x..."
+            className="flex-1 font-mono bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
           />
           <button
             type="submit"
-            className="px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-medium transition-all border border-violet-500/50"
+            className="font-mono px-6 py-3 bg-white hover:bg-white text-black font-bold uppercase tracking-widest text-sm transition-all hover:shadow-[0_0_20px_rgba(255, 255, 255,0.5)]"
           >
-            Search
+            SEARCH
           </button>
         </div>
       </form>
 
       {/* Search Result */}
       {searchResult && (
-        <div className="mb-8 p-4 rounded-lg border border-violet-500/20 bg-violet-500/5">
+        <div className="mb-8 p-4 border border-white/30 bg-[#0a0a0a]">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-sm text-white">{searchResult.address}</span>
-            <span className="font-heading font-bold text-violet-400 text-lg">
-              {searchResult.points} pts
+            <span className="font-mono text-sm text-gray-300 break-all">{searchResult.address}</span>
+            <span className="font-mono font-bold text-white text-lg ml-4">
+              {searchResult.points} PTS
             </span>
           </div>
         </div>
@@ -94,36 +99,32 @@ function Leaderboard() {
       {/* Leaderboard Table */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-none animate-spin" />
         </div>
       ) : leaderboard.length === 0 ? (
-        <div className="text-center py-16 border border-[#1a1a2e] rounded-xl bg-[#0c0c14]">
-          <p className="text-slate-400">No winners yet. Be the first to complete a bounty!</p>
+        <div className="text-center py-16 border border-white/20 bg-[#0a0a0a]">
+          <p className="font-mono text-gray-500 text-sm tracking-wider">
+            {'> NO_WINNERS_YET // BE_THE_FIRST_TO_COMPLETE_A_BOUNTY'}
+          </p>
         </div>
       ) : (
-        <div className="border border-[#1a1a2e] rounded-xl overflow-hidden">
-          {/* Header */}
-          <div className="grid grid-cols-[60px_1fr_120px] px-4 py-3 bg-[#0c0c14] border-b border-[#1a1a2e] text-slate-400 text-xs uppercase">
+        <div className="border border-white/30 bg-[#0a0a0a]">
+          <div className="grid grid-cols-[60px_1fr_120px] px-4 py-3 border-b border-white/30 font-mono text-gray-500 text-xs tracking-widest uppercase">
             <span>Rank</span>
             <span>Address</span>
             <span className="text-right">Points</span>
           </div>
 
-          {/* Rows */}
           {leaderboard.map((entry, index) => (
             <div
               key={entry.address}
-              className="grid grid-cols-[60px_1fr_120px] px-4 py-4 border-b border-[#1a1a2e] last:border-0 hover:bg-[#0c0c14]/50 transition-colors"
+              className="grid grid-cols-[60px_1fr_120px] px-4 py-4 border-b border-gray-800 last:border-0 hover:bg-white/5 transition-colors font-mono"
             >
-              <span className="font-heading font-bold text-white">
-                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+              <span className="font-bold text-white">
+                {String(index + 1).padStart(2, '0')}
               </span>
-              <span className="font-mono text-sm text-white truncate">
-                {entry.address}
-              </span>
-              <span className="font-heading font-bold text-violet-400 text-right">
-                {entry.points}
-              </span>
+              <span className="text-sm text-white truncate">{entry.address}</span>
+              <span className="font-bold text-white text-right">{entry.points}</span>
             </div>
           ))}
         </div>
@@ -133,5 +134,3 @@ function Leaderboard() {
 }
 
 export default Leaderboard;
-
-

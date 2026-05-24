@@ -18,7 +18,7 @@ function CreateBounty() {
   const [txState, setTxState] = useState({ status: null, hash: null, error: null });
 
   function handleChange(e) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
   async function handleSubmit(e) {
@@ -40,11 +40,10 @@ function CreateBounty() {
 
       const client = getReadClient();
       await waitForTransaction(client, hash, (s) => {
-        setTxState(prev => ({ ...prev, status: s }));
+        setTxState((prev) => ({ ...prev, status: s }));
       });
 
       setTxState({ status: 'FINALIZED', hash, error: null });
-      // Wait 4s for chain state to propagate, then redirect
       setTimeout(() => navigate('/app'), 4000);
     } catch (err) {
       const msg = err.message || 'Transaction failed';
@@ -58,71 +57,96 @@ function CreateBounty() {
 
   if (!isConnected) {
     return (
-      <div className="text-center py-20">
-        <p className="text-slate-400 text-lg mb-4">Connect your wallet to create a bounty.</p>
-        <Link to="/" className="text-violet-400 hover:underline">← Back to Bounties</Link>
+      <div className="text-center py-20 max-w-2xl mx-auto">
+        <div className="border border-white/30 bg-[#0a0a0a] p-8">
+          <p className="font-mono text-gray-400 text-sm mb-4 tracking-wider">
+            {'> ERROR: WALLET_NOT_CONNECTED'}
+          </p>
+          <Link
+            to="/app"
+            className="font-mono text-white hover:text-gray-300 text-xs tracking-widest"
+          >
+            {'< BACK_TO_BOUNTIES'}
+          </Link>
+        </div>
       </div>
     );
   }
 
+  const inputClass =
+    'w-full font-mono bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all';
+
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header with back link */}
       <div className="flex items-center justify-between mb-8">
-        <Link to="/app" className="text-slate-500 hover:text-white text-sm transition-colors">
-          ← Back to Bounties
+        <Link
+          to="/app"
+          className="font-mono text-xs text-gray-500 hover:text-white tracking-widest transition-colors"
+        >
+          {'< BACK_TO_BOUNTIES'}
         </Link>
-        <h1 className="font-heading font-bold text-2xl text-white">Create Bounty</h1>
-        <div className="w-24" />
       </div>
 
-      {/* Form Card */}
-      <div className="card-futuristic rounded-2xl p-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Title */}
+      <div className="mb-8">
+        <div className="font-mono text-xs text-white tracking-widest mb-2">// NEW_BOUNTY_CONFIG</div>
+        <h1 className="font-mono font-bold text-3xl text-white tracking-tight">
+          Create_Bounty<span className="text-white">()</span>
+        </h1>
+      </div>
+
+      <div className="border border-white/30 bg-[#0a0a0a] p-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Title *</label>
+            <label className="block font-mono text-xs text-gray-400 mb-2 tracking-widest uppercase">
+              Title <span className="text-white">*</span>
+            </label>
             <input
               type="text"
               name="title"
               value={form.title}
               onChange={handleChange}
               required
-              placeholder="e.g., Build a React Dashboard"
-              className="w-full bg-[#0a0a12] border border-[#1a1a2e] rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all"
+              maxLength={120}
+              placeholder="e.g., BUILD_A_REACT_DASHBOARD"
+              className={inputClass}
             />
           </div>
 
-          {/* Description */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Description *</label>
+            <label className="block font-mono text-xs text-gray-400 mb-2 tracking-widest uppercase">
+              Description <span className="text-white">*</span>
+            </label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
               required
               rows={4}
-              placeholder="Describe what needs to be built..."
-              className="w-full bg-[#0a0a12] border border-[#1a1a2e] rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all resize-none"
+              maxLength={600}
+              placeholder="// Describe what needs to be built..."
+              className={`${inputClass} resize-none`}
             />
           </div>
 
-          {/* Requirements */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Requirements</label>
+            <label className="block font-mono text-xs text-gray-400 mb-2 tracking-widest uppercase">
+              Requirements
+            </label>
             <textarea
               name="requirements"
               value={form.requirements}
               onChange={handleChange}
               rows={3}
-              placeholder="List specific requirements for evaluation..."
-              className="w-full bg-[#0a0a12] border border-[#1a1a2e] rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all resize-none"
+              maxLength={400}
+              placeholder="// React, TypeScript, responsive..."
+              className={`${inputClass} resize-none`}
             />
           </div>
 
-          {/* Reward Points */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Reward Points</label>
+            <label className="block font-mono text-xs text-gray-400 mb-2 tracking-widest uppercase">
+              Reward_Points
+            </label>
             <input
               type="number"
               name="rewardPoints"
@@ -131,28 +155,28 @@ function CreateBounty() {
               min="1"
               max="10000"
               placeholder="100"
-              className="w-full bg-[#0a0a12] border border-[#1a1a2e] rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:shadow-[0_0_15px_rgba(139,92,246,0.1)] transition-all"
+              className={inputClass}
             />
           </div>
 
-          {/* Submit Button — at top of form visually prominent */}
           <button
             type="submit"
-            disabled={txState.status === 'pending' || !form.title.trim() || !form.description.trim()}
-            className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed border border-violet-500/50"
+            disabled={
+              txState.status === 'pending' || !form.title.trim() || !form.description.trim()
+            }
+            className="w-full font-mono py-4 bg-white hover:bg-white text-black font-bold uppercase tracking-widest text-sm transition-all hover:shadow-[0_0_30px_rgba(255, 255, 255,0.5)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {txState.status === 'pending' ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Creating...
+                <span className="w-4 h-4 border-2 border-black border-t-transparent animate-spin" />
+                EXECUTING...
               </span>
             ) : (
-              'Create Bounty'
+              '[ DEPLOY_BOUNTY ]'
             )}
           </button>
         </form>
 
-        {/* TX Status */}
         {txState.status && (
           <div className="mt-6">
             <TxStatus status={txState.status} txHash={txState.hash} error={txState.error} />
@@ -164,5 +188,3 @@ function CreateBounty() {
 }
 
 export default CreateBounty;
-
-

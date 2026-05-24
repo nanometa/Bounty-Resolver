@@ -27,7 +27,6 @@ function BountyDetail() {
       const parsed = JSON.parse(bountyData);
       setBounty(parsed);
 
-      // Load submissions
       const subsData = await getBountySubmissions(bounty_id);
       const subIds = JSON.parse(subsData);
       const subsWithScores = [];
@@ -56,7 +55,6 @@ function BountyDetail() {
         setClosingTx(prev => ({ ...prev, status: s }));
       });
       setClosingTx({ status: 'FINALIZED', hash, error: null });
-      // Reload data
       setTimeout(loadBounty, 2000);
     } catch (err) {
       const msg = err.message || 'Transaction failed';
@@ -71,16 +69,22 @@ function BountyDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-none animate-spin" />
       </div>
     );
   }
 
   if (!bounty || !bounty.bounty_id) {
     return (
-      <div className="text-center py-20">
-        <p className="text-slate-400">Bounty not found.</p>
-        <Link to="/" className="text-violet-400 hover:underline mt-4 inline-block">← Back to Bounties</Link>
+      <div className="max-w-3xl mx-auto">
+        <Link to="/app" className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors">
+          {'< BACK_TO_BOUNTIES'}
+        </Link>
+        <div className="text-center py-16 border border-white/20 bg-[#0a0a0a]">
+          <p className="font-mono text-gray-500 text-sm tracking-wider">
+            {'> BOUNTY_NOT_FOUND // ID_INVALID'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -88,57 +92,84 @@ function BountyDetail() {
   const isOpen = bounty.status === 'open';
   const isOwner = address && bounty.creator && address.toLowerCase() === bounty.creator.toLowerCase();
 
+  const truncate = (addr) =>
+    addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+
   return (
-    <div>
+    <div className="max-w-4xl mx-auto">
       {/* Back button */}
-      <Link to="/" className="text-slate-400 hover:text-white text-sm mb-6 inline-block">
-        ← Back to Bounties
+      <Link to="/app" className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors">
+        {'< BACK_TO_BOUNTIES'}
       </Link>
 
-      {/* Bounty Details Card */}
-      <div className="border border-[#1a1a2e] rounded-xl p-6 bg-[#0c0c14] mb-8">
-        <div className="flex items-start justify-between mb-4">
-          <h1 className="font-heading font-bold text-2xl text-white">{bounty.title}</h1>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="font-mono text-xs text-white tracking-widest">
+            {`// BOUNTY_${bounty.bounty_id?.toString().toUpperCase()}`}
+          </div>
           <span
-            className={`text-xs px-3 py-1 rounded-full font-medium ${
+            className={`font-mono text-[10px] px-2 py-0.5 tracking-widest uppercase border ${
               isOpen
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                : 'bg-muted/10 text-slate-400 border border-muted/20'
+                ? 'bg-white/10 text-white border-white/40'
+                : 'bg-black text-gray-500 border-gray-700'
             }`}
           >
-            {isOpen ? 'Open' : 'Closed'}
+            {isOpen ? 'OPEN' : 'CLOSED'}
           </span>
         </div>
+        <h1 className="font-mono font-bold text-3xl md:text-4xl text-white tracking-tight leading-tight">
+          {bounty.title}
+        </h1>
+      </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+      {/* Bounty Details Card */}
+      <div className="border border-white/30 bg-[#0a0a0a] p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b border-dashed border-gray-700">
           <div>
-            <span className="text-slate-400 text-xs uppercase">Reward</span>
-            <p className="font-heading font-bold text-violet-400 text-lg">{bounty.reward_points} pts</p>
+            <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-1">
+              {'> REWARD'}
+            </div>
+            <div className="font-mono flex items-baseline gap-2">
+              <span className="text-white font-bold text-2xl">{bounty.reward_points}</span>
+              <span className="text-gray-500 text-xs uppercase tracking-widest">PTS</span>
+            </div>
           </div>
           <div>
-            <span className="text-slate-400 text-xs uppercase">Creator</span>
-            <p className="font-mono text-sm text-white">{bounty.creator}</p>
+            <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-1">
+              {'> CREATOR'}
+            </div>
+            <p className="font-mono text-sm text-white break-all">{truncate(bounty.creator)}</p>
           </div>
         </div>
 
-        <div className="mb-4">
-          <span className="text-slate-400 text-xs uppercase">Description</span>
-          <p className="text-white mt-1">{bounty.description}</p>
+        <div className="mb-6">
+          <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+            {'> DESCRIPTION'}
+          </div>
+          <p className="text-gray-300 leading-relaxed text-sm">{bounty.description}</p>
         </div>
 
         {bounty.requirements && (
           <div>
-            <span className="text-slate-400 text-xs uppercase">Requirements</span>
-            <p className="text-white mt-1 bg-violet-500/5 p-3 rounded border border-violet-500/10">
+            <div className="font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+              {'> REQUIREMENTS'}
+            </div>
+            <pre className="font-mono text-sm text-gray-300 bg-black border border-gray-800 p-4 whitespace-pre-wrap break-words leading-relaxed">
               {bounty.requirements}
-            </p>
+            </pre>
           </div>
         )}
 
         {bounty.winner && (
-          <div className="mt-4 p-3 rounded bg-violet-500/5 border border-violet-500/20">
-            <span className="text-violet-400 text-sm font-medium">🏆 Winner: </span>
-            <Link to={`/submission/${bounty.winner}`} className="text-violet-400 hover:underline text-sm font-mono">
+          <div className="mt-6 p-4 bg-black border border-white/40">
+            <div className="font-mono text-[10px] text-white tracking-widest uppercase mb-1">
+              {'> WINNER_SELECTED'}
+            </div>
+            <Link
+              to={`/submission/${bounty.winner}`}
+              className="font-mono text-sm text-white hover:underline break-all"
+            >
               {bounty.winner}
             </Link>
           </div>
@@ -146,22 +177,22 @@ function BountyDetail() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex flex-wrap items-center gap-4 mb-8">
         {isOpen && (
           <Link
             to={`/bounty/${bounty_id}/submit`}
-            className="px-6 py-3 bg-violet-500 hover:bg-violet-500/90 text-white rounded-lg font-medium transition-colors"
+            className="font-mono px-6 py-3 bg-white hover:bg-gray-200 text-black font-bold uppercase tracking-widest text-sm transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]"
           >
-            Submit Solution
+            {'[ SUBMIT_SOLUTION ]'}
           </Link>
         )}
         {isOpen && isOwner && submissions.length > 0 && (
           <button
             onClick={handleCloseBounty}
             disabled={closingTx.status === 'pending'}
-            className="px-6 py-3 bg-red/10 hover:bg-red/20 text-red border border-red/20 rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="font-mono px-6 py-3 bg-black hover:bg-white/10 text-white border border-white font-bold uppercase tracking-widest text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Close Bounty & Pick Winner
+            {closingTx.status === 'pending' ? 'CLOSING...' : '[ CLOSE_BOUNTY & PICK_WINNER ]'}
           </button>
         )}
       </div>
@@ -173,42 +204,59 @@ function BountyDetail() {
         </div>
       )}
 
-      {/* Submissions List */}
-      <h2 className="font-heading font-bold text-lg mb-4">
-        Submissions ({submissions.length})
-      </h2>
+      {/* Submissions Section */}
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <div className="font-mono text-xs text-white tracking-widest mb-1">
+            {'// SUBMISSIONS_REGISTRY'}
+          </div>
+          <h2 className="font-mono font-bold text-2xl text-white tracking-tight">
+            Submissions<span className="text-white">({submissions.length})</span>
+          </h2>
+        </div>
+      </div>
 
       {submissions.length === 0 ? (
-        <p className="text-slate-400">No submissions yet.</p>
+        <div className="text-center py-12 border border-white/20 bg-[#0a0a0a]">
+          <p className="font-mono text-gray-500 text-sm tracking-wider">
+            {'> NO_SUBMISSIONS_YET // BE_THE_FIRST'}
+          </p>
+        </div>
       ) : (
-        <div className="space-y-3">
-          {submissions.map(sub => {
+        <div className="border border-white/30 bg-[#0a0a0a]">
+          <div className="grid grid-cols-[60px_1fr_180px_100px] px-4 py-3 border-b border-white/30 font-mono text-gray-500 text-xs tracking-widest uppercase">
+            <span>#</span>
+            <span>Worker</span>
+            <span>Submission_ID</span>
+            <span className="text-right">Score</span>
+          </div>
+          {submissions.map((sub, index) => {
             const scoreColor = sub.score > 0 ? getScoreColor(sub.score) : null;
             return (
               <Link
                 key={sub.sub_id}
                 to={`/submission/${sub.sub_id}`}
-                className="flex items-center justify-between p-4 border border-[#1a1a2e] rounded-lg bg-[#0c0c14] hover:border-violet-500/30 transition-colors"
+                className="grid grid-cols-[60px_1fr_180px_100px] px-4 py-4 border-b border-gray-800 last:border-0 hover:bg-white/5 transition-colors font-mono items-center"
               >
-                <div className="flex items-center gap-4">
-                  <span className="font-mono text-sm text-slate-400">
-                    {sub.worker ? `${sub.worker.slice(0, 6)}...${sub.worker.slice(-4)}` : ''}
-                  </span>
-                  <span className="text-white text-sm">{sub.sub_id}</span>
-                </div>
-                <div className="flex items-center gap-3">
+                <span className="font-bold text-white">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span className="text-sm text-white truncate">
+                  {truncate(sub.worker)}
+                </span>
+                <span className="text-xs text-gray-500 truncate">{sub.sub_id}</span>
+                <span className="text-right">
                   {sub.score > 0 ? (
                     <span
-                      className="font-heading font-bold text-sm"
+                      className="font-bold text-sm"
                       style={{ color: scoreColor?.color }}
                     >
                       {sub.score}/100
                     </span>
                   ) : (
-                    <span className="text-slate-400 text-xs">Pending</span>
+                    <span className="text-gray-600 text-[10px] uppercase tracking-widest">PENDING</span>
                   )}
-                  <span className="text-violet-400 text-sm">View →</span>
-                </div>
+                </span>
               </Link>
             );
           })}
@@ -219,5 +267,3 @@ function BountyDetail() {
 }
 
 export default BountyDetail;
-
-

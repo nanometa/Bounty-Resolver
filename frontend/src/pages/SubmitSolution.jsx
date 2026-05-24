@@ -56,7 +56,6 @@ function SubmitSolution() {
       });
 
       setTxState({ status: 'FINALIZED', hash, error: null });
-      // Wait 4s for chain state to propagate, then redirect
       setTimeout(() => navigate(`/bounty/${bounty_id}`), 4000);
     } catch (err) {
       const msg = err.message || 'Transaction failed';
@@ -71,66 +70,85 @@ function SubmitSolution() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-none animate-spin" />
       </div>
     );
   }
 
   if (!isConnected) {
     return (
-      <div className="text-center py-20">
-        <p className="text-slate-400 text-lg mb-4">Connect your wallet to submit a solution.</p>
-        <Link to={`/bounty/${bounty_id}`} className="text-violet-400 hover:underline">← Back to Bounty</Link>
+      <div className="max-w-2xl mx-auto">
+        <Link to={`/bounty/${bounty_id}`} className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors">
+          {'< BACK_TO_BOUNTY'}
+        </Link>
+        <div className="text-center py-16 border border-white/20 bg-[#0a0a0a]">
+          <p className="font-mono text-gray-500 text-sm tracking-wider">
+            {'> WALLET_NOT_CONNECTED // CONNECT_TO_SUBMIT'}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link to={`/bounty/${bounty_id}`} className="text-slate-400 hover:text-white text-sm mb-6 inline-block">
-        ← Back to Bounty
+      <Link to={`/bounty/${bounty_id}`} className="font-mono text-xs text-gray-500 hover:text-white mb-6 inline-block tracking-widest transition-colors">
+        {'< BACK_TO_BOUNTY'}
       </Link>
 
       {/* Bounty Summary */}
       {bounty && (
-        <div className="border border-[#1a1a2e] rounded-lg p-4 bg-[#0c0c14] mb-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading font-bold text-white">{bounty.title}</h2>
-            <span className="text-violet-400 font-heading font-bold text-sm">{bounty.reward_points} pts</span>
+        <div className="border border-white/30 bg-[#0a0a0a] p-4 mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-mono font-bold text-white text-sm tracking-wider">{bounty.title}</h2>
+            <div className="font-mono flex items-baseline gap-1">
+              <span className="text-white font-bold text-base">{bounty.reward_points}</span>
+              <span className="text-gray-500 text-[10px] uppercase tracking-widest">PTS</span>
+            </div>
           </div>
           {bounty.requirements && (
-            <p className="text-slate-400 text-sm mt-2">{bounty.requirements}</p>
+            <p className="font-mono text-xs text-gray-500 mt-2 leading-relaxed">{bounty.requirements}</p>
           )}
         </div>
       )}
 
-      <h1 className="font-heading font-bold text-2xl mb-6">Submit Solution</h1>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="font-mono text-xs text-white tracking-widest mb-2">// SOLUTION_SUBMISSION</div>
+        <h1 className="font-mono font-bold text-3xl text-white tracking-tight">
+          Submit_Solution<span className="text-white">()</span>
+        </h1>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Solution URL */}
         <div>
-          <label className="block text-sm text-slate-400 mb-2">Solution URL *</label>
+          <label className="block font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+            {'> SOLUTION_URL *'}
+          </label>
           <input
             type="url"
             name="solutionUrl"
             value={form.solutionUrl}
             onChange={handleChange}
             required
-            placeholder="Your URL"
-            className="w-full bg-[#0c0c14] border border-[#1a1a2e] rounded-lg px-4 py-3 text-white placeholder-muted/50 focus:outline-none focus:border-violet-500 transition-colors"
+            placeholder="https://..."
+            className="w-full font-mono bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm text-slate-400 mb-2">Description</label>
+          <label className="block font-mono text-[10px] text-gray-500 tracking-widest uppercase mb-2">
+            {'> DESCRIPTION'}
+          </label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
-            rows={4}
-            placeholder="Describe your solution approach..."
-            className="w-full bg-[#0c0c14] border border-[#1a1a2e] rounded-lg px-4 py-3 text-white placeholder-muted/50 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+            rows={5}
+            placeholder="Describe your approach..."
+            className="w-full font-mono bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all resize-none"
           />
         </div>
 
@@ -138,15 +156,15 @@ function SubmitSolution() {
         <button
           type="submit"
           disabled={txState.status === 'pending' || !form.solutionUrl.trim()}
-          className="w-full py-3 bg-violet-500 hover:bg-violet-500/90 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full font-mono py-3 bg-white hover:bg-gray-200 text-black font-bold uppercase tracking-widest text-sm transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {txState.status === 'pending' ? (
             <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Submitting...
+              <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-none animate-spin" />
+              SUBMITTING...
             </span>
           ) : (
-            'Submit Solution'
+            '[ SUBMIT_SOLUTION ]'
           )}
         </button>
       </form>
@@ -162,5 +180,3 @@ function SubmitSolution() {
 }
 
 export default SubmitSolution;
-
-

@@ -290,7 +290,36 @@ body {
   }
 }
 
-/* RainbowKit overrides */
+/* RainbowKit overrides - Brutalist style */
 [data-rk] {
-  --rk-colors-accentColor: #8b5cf6 !important;
+  --rk-colors-accentColor: #ffffff !important;
+  --rk-colors-accentColorForeground: #000000 !important;
+  --rk-radii-actionButton: 0px !important;
+  --rk-radii-connectButton: 0px !important;
+  --rk-radii-menuButton: 0px !important;
+  --rk-radii-modal: 0px !important;
+  --rk-radii-modalMobile: 0px !important;
+  --rk-fonts-body: 'JetBrains Mono', 'Space Mono', monospace !important;
+}
+
+/* Make ConnectButton brutalist white */
+[data-rk] button[aria-label="Connect Wallet"],
+[data-rk] [data-testid="rk-connect-button"] {
+  background: transparent !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-size: 12px !important;
+  border-radius: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-rk] button[aria-label="Connect Wallet"]:hover,
+[data-rk] [data-testid="rk-connect-button"]:hover {
+  background: #ffffff !important;
+  color: #000 !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3) !important;
 }

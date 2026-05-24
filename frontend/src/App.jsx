@@ -1,9 +1,9 @@
-// ═══════════════════════════════════════
-// APP — RainbowKit setup, NO WalletConnect
+// =====================================================
+// APP - RainbowKit setup, NO WalletConnect
 // MetaMask injected connector ONLY
-// ═══════════════════════════════════════
+// =====================================================
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http } from 'wagmi';
@@ -14,13 +14,15 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { WalletProvider } from './WalletContext';
 import { ToastProvider } from './components/Toast';
 import Layout from './Layout';
-import Landing from './pages/Landing';
-import Home from './pages/Home';
-import BountyDetail from './pages/BountyDetail';
-import CreateBounty from './pages/CreateBounty';
-import SubmitSolution from './pages/SubmitSolution';
-import SubmissionDetail from './pages/SubmissionDetail';
-import Leaderboard from './pages/Leaderboard';
+
+// Lazy loaded page components for chunk optimization
+const Landing = lazy(() => import('./pages/Landing'));
+const Home = lazy(() => import('./pages/Home'));
+const BountyDetail = lazy(() => import('./pages/BountyDetail'));
+const CreateBounty = lazy(() => import('./pages/CreateBounty'));
+const SubmitSolution = lazy(() => import('./pages/SubmitSolution'));
+const SubmissionDetail = lazy(() => import('./pages/SubmissionDetail'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 
 // GenLayer Studionet chain definition
 const genlayerStudionet = {
@@ -44,7 +46,7 @@ const genlayerStudionet = {
   },
 };
 
-// Wagmi config — MetaMask injected connector ONLY, NO WalletConnect
+// Wagmi config - MetaMask injected connector ONLY, NO WalletConnect
 const config = createConfig({
   chains: [genlayerStudionet],
   connectors: [
@@ -64,26 +66,36 @@ function App() {
         <RainbowKitProvider
           modalSize="compact"
           theme={darkTheme({
-            accentColor: '#8b5cf6',
-            accentColorForeground: 'white',
-            borderRadius: 'medium',
+            accentColor: '#ffffff',
+            accentColorForeground: 'black',
+            borderRadius: 'none',
+            fontStack: 'system',
           })}
         >
           <WalletProvider>
             <ToastProvider>
               <BrowserRouter>
-                <Routes>
-                  {/* Landing page — no layout */}
-                  <Route path="/" element={<Landing />} />
-                  {/* App pages — with layout */}
-                  <Route element={<Layout />}>
-                    <Route path="/app" element={<Home />} />
-                    <Route path="/bounty/:bounty_id" element={<BountyDetail />} />
-                    <Route path="/create" element={<CreateBounty />} />
-                    <Route path="/bounty/:bounty_id/submit" element={<SubmitSolution />} />
-                    <Route path="/submission/:sub_id" element={<SubmissionDetail />} />
-                  </Route>
-                </Routes>
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen bg-black flex items-center justify-center">
+                      <div className="w-10 h-10 border-2 border-white border-t-transparent rounded-none animate-spin" />
+                    </div>
+                  }
+                >
+                  <Routes>
+                    {/* Landing page - no layout */}
+                    <Route path="/" element={<Landing />} />
+                    {/* App pages - with layout */}
+                    <Route element={<Layout />}>
+                      <Route path="/app" element={<Home />} />
+                      <Route path="/bounty/:bounty_id" element={<BountyDetail />} />
+                      <Route path="/create" element={<CreateBounty />} />
+                      <Route path="/bounty/:bounty_id/submit" element={<SubmitSolution />} />
+                      <Route path="/submission/:sub_id" element={<SubmissionDetail />} />
+                      <Route path="/leaderboard" element={<Leaderboard />} />
+                    </Route>
+                  </Routes>
+                </Suspense>
               </BrowserRouter>
             </ToastProvider>
           </WalletProvider>

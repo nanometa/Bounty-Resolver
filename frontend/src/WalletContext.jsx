@@ -1,16 +1,16 @@
-// ═══════════════════════════════════════
-// WALLET CONTEXT — MetaMask ONLY, NEVER returns null
+// =======================================
+// WALLET CONTEXT - MetaMask ONLY, NEVER returns null
 // NEVER use createAccount() from genlayer-js
 // NEVER manually touch window.ethereum
 // Let RainbowKit handle wallet connection through its own API
-// ═══════════════════════════════════════
+// =======================================
 
 import React, { createContext, useContext, useMemo } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 
 const WalletContext = createContext(null);
 
-// Default wallet object — ALWAYS returned, NEVER null
+// Default wallet object - ALWAYS returned, NEVER null
 const defaultWallet = {
   address: null,
   isConnected: false,
